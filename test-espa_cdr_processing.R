@@ -138,12 +138,12 @@ context("auto_preprocess_landsat")
 
 prefix <- 'test'
 
-# image_dirs <- hdf_ls_dir
+# image_dirs <- envi_ls_dir
 # prefix <- "TEST"
 # tc=FALSE
 # dem_path=NULL
 # aoi=NULL
-# output_path=hdf_ls_dir
+# output_path=envi_ls_dir
 # mask_type='fmask'
 # mask_output=FALSE
 # n_cpus=4
@@ -154,40 +154,40 @@ prefix <- 'test'
 # notify=print
 # verbose <- TRUE
 
-hdf_preproc_out <- auto_preprocess_landsat(hdf_ls_dir, prefix=prefix, tc=FALSE, 
-                                           output_path=hdf_ls_dir, 
-                                           verbose=TRUE)
 tiff_preproc_out <- auto_preprocess_landsat(tiff_ls_dir, prefix=prefix, tc=FALSE, 
                                            output_path=tiff_ls_dir, 
                                            verbose=TRUE)
 envi_preproc_out <- auto_preprocess_landsat(envi_ls_dir, prefix=prefix, tc=FALSE, 
                                            output_path=envi_ls_dir, 
                                            verbose=TRUE)
+hdf_preproc_out <- auto_preprocess_landsat(hdf_ls_dir, prefix=prefix, tc=FALSE, 
+                                           output_path=hdf_ls_dir, 
+                                           verbose=TRUE)
 hdfold_preproc_out <- auto_preprocess_landsat(hdfold_ls_dir, prefix=prefix, 
                                               tc=FALSE,  
                                               output_path=hdfold_ls_dir, 
                                               verbose=TRUE)
 
-hdf_preproc_bands <- stack(hdf_preproc_out$bands_file)
-hdf_preproc_masks <- stack(hdf_preproc_out$masks_file)
+envi_preproc_bands <- stack(envi_preproc_out$bands_file)
+envi_preproc_masks <- stack(envi_preproc_out$masks_file)
 # Test that a few random pixels have the expected values
 test_that("preprocessing works properly", {
-    expect_equivalent(getValuesBlock(hdf_preproc_bands, 3426, 1, 3281, 1),
+    expect_equivalent(getValuesBlock(envi_preproc_bands, 3426, 1, 3281, 1),
                       matrix(c(263, 363, 213, 2926, 1376, 508)))
-    expect_equivalent(getValuesBlock(hdf_preproc_masks, 3426, 1, 3281, 1),
+    expect_equivalent(getValuesBlock(envi_preproc_masks, 3426, 1, 3281, 1),
                       matrix(c(0, 0)))
-    expect_equivalent(getValuesBlock(hdf_preproc_masks, 1, 1, 1, 1),
+    expect_equivalent(getValuesBlock(envi_preproc_masks, 1, 1, 1, 1),
                       matrix(c(255, 255)))
-)}
+})
 
 tiff_preproc_bands <- stack(tiff_preproc_out$bands_file)
 envi_preproc_bands <- stack(envi_preproc_out$bands_file)
 hdfold_preproc_bands <- stack(hdfold_preproc_out$bands_file)
 test_that("preprocessing results matach regardless of input file format", {
-    expect_equivalent(hdf_preproc_bands, tiff_preproc_bands)
-    expect_equivalent(hdf_preproc_bands, envi_preproc_bands)
-    expect_equivalent(hdf_preproc_bands, hdfold_preproc_bands)
-)}
+    expect_equal(getValues(tiff_preproc_bands), getValues(envi_preproc_bands))
+    expect_equal(getValues(tiff_preproc_bands), getValues(hdf_preproc_bands))
+    expect_equal(getValues(tiff_preproc_bands), getValues(hdfold_preproc_bands))
+})
 
 ################################################################################
 # Test auto-calc_predictors
