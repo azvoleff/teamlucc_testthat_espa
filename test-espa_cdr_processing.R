@@ -1,11 +1,11 @@
+file_base <- "LE70040682007234ASN00"
+file_datestring <- "004-068_2007-234_LE7"
+
 ################################################################################
 # First test file extraction
 ################################################################################
 
 context("espa_extract")
-
-file_base <- "LE70040682007234ASN00"
-file_datestring <- "004-068_2007-234_LE7"
 
 ################################################################################
 # Check ENVI extraction
@@ -89,6 +89,9 @@ test_that("hdfold format file extracted properly", {
 ################################################################################
 # Now test file format detection
 ################################################################################
+
+context("file format detection")
+
 test_that("file format detection works properly", {
     expect_equal(detect_ls_files(envi_ls_dir), 
                  list(file_bases=paste0("ENVI_format/", file_datestring, "/", file_base), 
@@ -108,6 +111,8 @@ test_that("file format detection works properly", {
 ################################################################################
 # Test metadata loading
 ################################################################################
+
+context("metadata handling")
 
 meta <- list()
 meta$aq_date <- strptime("2007-08-22 14:42:23.924851Z", format="%Y-%m-%d %H:%M:%OSZ", tz="UTC")
@@ -131,23 +136,23 @@ test_that("file format detection works properly", {
 ################################################################################
 context("auto_preprocess_landsat")
 
-image_dirs <- hdf_ls_dir
-prefix <- "TEST"
-tc=FALSE
-dem_path=NULL
-aoi=NULL
-output_path=hdf_ls_dir
-mask_type='fmask'
-mask_output=FALSE
-n_cpus=4
-cleartmp=FALSE
-overwrite=FALSE
-of="GTiff"
-ext='tif'
-notify=print
-verbose <- TRUE
-
 prefix <- 'test'
+
+# image_dirs <- hdf_ls_dir
+# prefix <- "TEST"
+# tc=FALSE
+# dem_path=NULL
+# aoi=NULL
+# output_path=hdf_ls_dir
+# mask_type='fmask'
+# mask_output=FALSE
+# n_cpus=4
+# cleartmp=FALSE
+# overwrite=FALSE
+# of="GTiff"
+# ext='tif'
+# notify=print
+# verbose <- TRUE
 
 hdf_preproc_out <- auto_preprocess_landsat(hdf_ls_dir, prefix=prefix, tc=FALSE, 
                                            output_path=hdf_ls_dir, 
@@ -163,7 +168,26 @@ hdfold_preproc_out <- auto_preprocess_landsat(hdfold_ls_dir, prefix=prefix,
                                               output_path=hdfold_ls_dir, 
                                               verbose=TRUE)
 
-stack(file.path(hdf_ls_dir, paste0(file_base, '.tif'))
+hdf_preproc_bands <- stack(hdf_preproc_out$bands_file)
+hdf_preproc_masks <- stack(hdf_preproc_out$masks_file)
+# Test that a few random pixels have the expected values
+test_that("preprocessing works properly", {
+    expect_equivalent(getValuesBlock(hdf_preproc_bands, 3426, 1, 3281, 1),
+                      matrix(c(263, 363, 213, 2926, 1376, 508)))
+    expect_equivalent(getValuesBlock(hdf_preproc_masks, 3426, 1, 3281, 1),
+                      matrix(c(0, 0)))
+    expect_equivalent(getValuesBlock(hdf_preproc_masks, 1, 1, 1, 1),
+                      matrix(c(255, 255)))
+)}
+
+tiff_preproc_bands <- stack(tiff_preproc_out$bands_file)
+envi_preproc_bands <- stack(envi_preproc_out$bands_file)
+hdfold_preproc_bands <- stack(hdfold_preproc_out$bands_file)
+test_that("preprocessing results matach regardless of input file format", {
+    expect_equivalent(hdf_preproc_bands, tiff_preproc_bands)
+    expect_equivalent(hdf_preproc_bands, envi_preproc_bands)
+    expect_equivalent(hdf_preproc_bands, hdfold_preproc_bands)
+)}
 
 ################################################################################
 # Test auto-calc_predictors
