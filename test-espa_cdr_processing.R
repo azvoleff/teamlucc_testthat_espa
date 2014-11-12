@@ -180,13 +180,33 @@ test_that("preprocessing works properly", {
                       matrix(c(255, 255)))
 })
 
+# Define a function to check if two rasters match, including their values
+compare_raster_values <- function(x, y) {
+    compareRaster(x, y)
+    bs <- blockSize(x)
+    for (block_num in 1:bs$n) {
+        x_vals <- getValuesBlock(x, row=bs$row[block_num], nrows=bs$nrows[block_num])
+        y_vals <- getValuesBlock(y, row=bs$row[block_num], nrows=bs$nrows[block_num])
+        if (!all(x_vals == y_vals)) {
+            return(FALSE)
+        }
+    }
+    return(TRUE)
+}
+
 tiff_preproc_bands <- stack(tiff_preproc_out$bands_file)
-envi_preproc_bands <- stack(envi_preproc_out$bands_file)
+hdf_preproc_bands <- stack(hdf_preproc_out$bands_file)
 hdfold_preproc_bands <- stack(hdfold_preproc_out$bands_file)
-test_that("preprocessing results matach regardless of input file format", {
-    expect_equal(getValues(tiff_preproc_bands), getValues(envi_preproc_bands))
-    expect_equal(getValues(tiff_preproc_bands), getValues(hdf_preproc_bands))
-    expect_equal(getValues(tiff_preproc_bands), getValues(hdfold_preproc_bands))
+tiff_preproc_masks <- stack(tiff_preproc_out$masks_file)
+hdf_preproc_masks <- stack(hdf_preproc_out$masks_file)
+hdfold_preproc_masks <- stack(hdfold_preproc_out$masks_file)
+test_that("preprocessing results match regardless of input file format", {
+    expect_true(compare_raster_values(tiff_preproc_bands, envi_preproc_bands))
+    expect_true(compare_raster_values(tiff_preproc_bands, hdf_preproc_bands))
+    expect_true(compare_raster_values(tiff_preproc_bands, hdfold_preproc_bands))
+    expect_true(compare_raster_values(tiff_preproc_masks, envi_preproc_masks))
+    expect_true(compare_raster_values(tiff_preproc_masks, hdf_preproc_masks))
+    expect_true(compare_raster_values(tiff_preproc_masks, hdfold_preproc_masks))
 })
 
 ################################################################################
