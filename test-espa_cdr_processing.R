@@ -210,17 +210,74 @@ test_that("preprocessing results match regardless of input file format", {
 })
 
 ################################################################################
-# Test auto-calc_predictors
+# Test auto_setup_dem
 ################################################################################
 
-aoi <- readOGR(".", "test_aoi")
-auto_preprocess_landsat(image_dirs, "VB", tc=FALSE, dem_path=output_path, 
-                        output_path=paste0(output_path, '_preproc'),
-                        verbose=TRUE, n_cpus=4, aoi=aoi, overwrite=TRUE)
+suppressMessages(require(rgdal))
+aoi <- readOGR('AOI', 'aoi')
+
+dem_files <- dir('DEM', pattern='.tif$', full.names=TRUE)
+dems <- lapply(dem_files, raster)
+dem_extents <- get_extent_polys(dems)
+dem_extents <- spTransform(dem_extents, CRS(proj4string(aoi)))
+
+tc_test_dir <- 'tc_test'
+unlink(tc_test_dir, recursive=TRUE)
+test_that("dem_test dir started out empty", {
+    expect_false(file.exists(tc_test_dir))
+})
+dir.create(tc_test_dir)
+auto_setup_dem(aoi, output_path=tc_test_dir, dem_extents=dem_extents, 
+               crop_to_aoi=TRUE)
+
+################################################################################
+# Test auto_preprocess_landsat with topographic correction
+################################################################################
+
+fmask_tc_prefix <- "fmask-tc-test"
+auto_preprocess_landsat(tiff_ls_dir, fmask_tc_prefix, tc=TRUE, 
+                        dem_path=tc_test_dir, output_path=tc_test_dir, 
+                        verbose=TRUE, aoi=aoi, mask_type="fmask")
+
+sixs_tc_prefix <- "6S-tc-test"
+auto_preprocess_landsat(tiff_ls_dir, sixs_tc_prefix, tc=TRUE, 
+                        dem_path=tc_test_dir, output_path=tc_test_dir, 
+                        verbose=TRUE, aoi=aoi, mask_type="6S")
+
+both_tc_prefix <- "both-tc-test"
+auto_preprocess_landsat(tiff_ls_dir, both_tc_prefix, tc=TRUE, 
+                        dem_path=tc_test_dir, output_path=tc_test_dir, 
+                        verbose=TRUE, aoi=aoi, mask_type="both")
+
+fmask_tc_stack <- stack(file.path(tc_test_dir,
+                                  paste0(fmask_tc_prefix, '_004-068_2007-234_L7ESR_tc.tif')))
+sixs_tc_stack <- stack(file.path(tc_test_dir,
+                                 paste0(sixs_tc_prefix, '_004-068_2007-234_L7ESR_tc.tif')))
+
+# Test that a few random pixels have the expected values
+test_that("preprocessing works properly", {
+    expect_equivalent(getValuesBlock(fmask_tc_stack, 123, 1, 654, 1),
+                      matrix(c(262, 362, 216, 3211, 1472, 575)))
+    expect_equivalent(getValuesBlock(fmask_tc_stack, 541, 1, 215, 1),
+                      matrix(c(268, 356, 237, 2763, 1190, 474)))
+    expect_equivalent(getValuesBlock(sixs_tc_stack, 123, 1, 654, 1),
+                      matrix(c(262, 362, 216, 3211, 1472, 575)))
+    expect_equivalent(getValuesBlock(sixs_tc_stack, 541, 1, 215, 1),
+                      matrix(c(268, 356, 237, 2763, 1190, 474)))
+    expect_equivalent(getValuesBlock(both_tc_stack, 123, 1, 654, 1),
+                      matrix(c(262, 362, 216, 3211, 1472, 575)))
+    expect_equivalent(getValuesBlock(both_tc_stack, 541, 1, 215, 1),
+                      matrix(c(268, 356, 237, 2763, 1190, 474)))
+})
+
+################################################################################
+# Test auto-calc_predictors
+################################################################################
 
 ################################################################################
 # Cleanup
 ################################################################################
+unlink(tc_test_dir, recursive=TRUE)
 unlink(envi_ls_dir, recursive=TRUE)
 unlink(hdf_ls_dir, recursive=TRUE)
 unlink(tiff_ls_dir, recursive=TRUE)
