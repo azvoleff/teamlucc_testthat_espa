@@ -234,16 +234,19 @@ auto_setup_dem(aoi, output_path=tc_test_dir, dem_extents=dem_extents,
 # Test auto_preprocess_landsat with topographic correction
 ################################################################################
 
+set.seed(1)
 fmask_tc_prefix <- "fmask-tc-test"
 auto_preprocess_landsat(tiff_ls_dir, fmask_tc_prefix, tc=TRUE, 
                         dem_path=tc_test_dir, output_path=tc_test_dir, 
                         verbose=TRUE, aoi=aoi, mask_type="fmask")
 
+set.seed(1)
 sixs_tc_prefix <- "6S-tc-test"
 auto_preprocess_landsat(tiff_ls_dir, sixs_tc_prefix, tc=TRUE, 
                         dem_path=tc_test_dir, output_path=tc_test_dir, 
                         verbose=TRUE, aoi=aoi, mask_type="6S")
 
+set.seed(1)
 both_tc_prefix <- "both-tc-test"
 auto_preprocess_landsat(tiff_ls_dir, both_tc_prefix, tc=TRUE, 
                         dem_path=tc_test_dir, output_path=tc_test_dir, 
@@ -253,21 +256,22 @@ fmask_tc_stack <- stack(file.path(tc_test_dir,
                                   paste0(fmask_tc_prefix, '_004-068_2007-234_L7ESR_tc.tif')))
 sixs_tc_stack <- stack(file.path(tc_test_dir,
                                  paste0(sixs_tc_prefix, '_004-068_2007-234_L7ESR_tc.tif')))
-
+both_tc_stack <- stack(file.path(tc_test_dir,
+                                 paste0(both_tc_prefix, '_004-068_2007-234_L7ESR_tc.tif')))
 # Test that a few random pixels have the expected values
 test_that("preprocessing works properly", {
-    expect_equivalent(getValuesBlock(fmask_tc_stack, 123, 1, 654, 1),
-                      matrix(c(262, 362, 216, 3211, 1472, 575)))
-    expect_equivalent(getValuesBlock(fmask_tc_stack, 541, 1, 215, 1),
-                      matrix(c(268, 356, 237, 2763, 1190, 474)))
-    expect_equivalent(getValuesBlock(sixs_tc_stack, 123, 1, 654, 1),
-                      matrix(c(262, 362, 216, 3211, 1472, 575)))
-    expect_equivalent(getValuesBlock(sixs_tc_stack, 541, 1, 215, 1),
-                      matrix(c(268, 356, 237, 2763, 1190, 474)))
-    expect_equivalent(getValuesBlock(both_tc_stack, 123, 1, 654, 1),
-                      matrix(c(262, 362, 216, 3211, 1472, 575)))
-    expect_equivalent(getValuesBlock(both_tc_stack, 541, 1, 215, 1),
-                      matrix(c(268, 356, 237, 2763, 1190, 474)))
+    expect_equal(matrix(getValuesBlock(fmask_tc_stack, 123, 1, 654, 1)),
+                 matrix(c(262, 362, 216, 3211, 1472, 575)))
+    expect_equal(matrix(getValuesBlock(fmask_tc_stack, 541, 1, 215, 1)),
+                 matrix(c(268, 356, 237, 2763, 1190, 474)))
+    expect_equal(matrix(getValuesBlock(sixs_tc_stack, 123, 1, 654, 1)),
+                 matrix(c(262, 362, 216, 3211, 1472, 575)), tolerance=.01)
+    expect_equal(matrix(getValuesBlock(sixs_tc_stack, 541, 1, 215, 1)),
+                 matrix(c(268, 356, 237, 2763, 1190, 474)))
+    expect_equal(matrix(getValuesBlock(both_tc_stack, 123, 1, 654, 1)),
+                 matrix(c(262, 362, 216, 3211, 1472, 575)))
+    expect_equal(matrix(getValuesBlock(both_tc_stack, 541, 1, 215, 1)),
+                 matrix(c(268, 356, 237, 2763, 1190, 474)))
 })
 
 ################################################################################
