@@ -138,6 +138,8 @@ context("auto_preprocess_landsat")
 
 prefix <- 'test'
 
+# library(foreach)
+# library(stringr)
 # image_dirs <- envi_ls_dir
 # prefix <- "TEST"
 # tc=FALSE
